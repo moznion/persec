@@ -13,14 +13,28 @@ type opt struct {
 	delta   int
 	pattern string
 	limit   int
+	out     string
 }
 
 func main() {
 	opt := new(opt)
 
 	flag.IntVar(&opt.delta, "delta", 60, "Span as seconds to measure the throughput")
-	flag.StringVar(&opt.pattern, "pattern", "", "A pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
+	flag.StringVar(&opt.pattern, "pattern", "", "A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
 	flag.IntVar(&opt.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
+	flag.StringVar(&opt.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
+
+	var f *os.File
+	if output_path := opt.out; len(output_path) > 0 {
+		f, err := os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Errorf("%s", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+	} else {
+		f = os.Stdout
+	}
 
 	flag.Parse()
 
@@ -74,7 +88,8 @@ func main() {
 
 			ticker <- struct{}{} // Pause to read from STDIN
 
-			fmt.Printf("%f lines/sec\n", float64(counter)/float64(sec)) // TODO where should it spew to?
+			throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(sec))
+			f.WriteString(throughput)
 
 			counter = 0
 			ticker <- struct{}{} // Resume to read from STDIN
@@ -87,8 +102,6 @@ func main() {
 	}()
 
 	go func() {
-		defer wg.Done()
-
 		should_wait := false
 		go func() {
 			for {
