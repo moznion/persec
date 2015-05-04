@@ -18,6 +18,11 @@ type opt struct {
 }
 
 func main() {
+	o := parseOpt()
+	run(o)
+}
+
+func parseOpt() *opt {
 	flag.Usage = func() {
 		fmt.Printf(`Usage:
   some_command | persec [Options]
@@ -36,6 +41,10 @@ Options:
 
 	flag.Parse()
 
+	return o
+}
+
+func run(o *opt) {
 	if o.help {
 		flag.Usage()
 		os.Exit(0)
@@ -43,6 +52,7 @@ Options:
 
 	var f *os.File
 	if output_path := o.out; len(output_path) > 0 {
+		// open a file which is specified by option with append mode
 		f, err := os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			fmt.Errorf("%s", err)
@@ -50,6 +60,7 @@ Options:
 		}
 		defer f.Close()
 	} else {
+		// choose STDOUT as a destination
 		f = os.Stdout
 	}
 
@@ -59,12 +70,12 @@ Options:
 		filter_re, _ = regexp.Compile(pattern)
 	}
 
-	nl_re, _ := regexp.Compile("\r?\n")
+	nl_re, _ := regexp.Compile("\r?\n") // line splitter
 
 	var counter uint64 = 0
 	in_chan := make(chan []byte, 1)
 
-	// register a worker
+	// counter
 	go func() {
 		for {
 			go func(term []byte) {
@@ -73,7 +84,7 @@ Options:
 				lines := nl_re.Split(string(term), -1)
 				n := len(lines)
 
-				// filter it here
+				// Apply filtering here
 				if filter_re != nil {
 					n = 0
 					for _, line := range lines {
@@ -88,11 +99,11 @@ Options:
 		}
 	}()
 
-	limit := o.limit
-	iteration := 1
-
 	var wg sync.WaitGroup
 	wg.Add(1)
+
+	limit := o.limit
+	iteration := 1
 
 	// time manager
 	ticker := make(chan struct{}, 1)
@@ -111,11 +122,14 @@ Options:
 
 			iteration++
 			if limit > 0 && iteration > limit {
+				// Terminate if `limit` is specified through opt and
+				// iteration overs that
 				wg.Done()
 			}
 		}
 	}()
 
+	// Read from STDIN and fire event for counter
 	go func() {
 		defer wg.Done()
 
@@ -132,6 +146,7 @@ Options:
 		buf := make([]byte, 1000000)
 		for {
 			if should_wait == true {
+				// Block to read from STDIN while outputting throughput result
 				continue
 			}
 
