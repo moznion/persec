@@ -6,14 +6,31 @@ import "sync"
 import "sync/atomic"
 import "regexp"
 import "fmt"
+import "flag"
 import "time"
 
+type opt struct {
+	delta   int
+	pattern string
+	limit   int
+}
+
 func main() {
-	nl_regex, err := regexp.Compile("\r?\n")
-	if err != nil {
-		fmt.Errorf("%s", err)
-		os.Exit(1)
+	opt := new(opt)
+
+	flag.IntVar(&opt.delta, "delta", 60, "Span as seconds to measure the throughput")
+	flag.StringVar(&opt.pattern, "pattern", "", "A pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
+	flag.IntVar(&opt.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
+
+	flag.Parse()
+
+	var filter_re *regexp.Regexp
+	filter_re = nil
+	if pattern := opt.pattern; len(pattern) > 0 {
+		filter_re, _ = regexp.Compile(pattern)
 	}
+
+	nl_re, _ := regexp.Compile("\r?\n")
 
 	var counter uint64 = 0
 	in_chan := make(chan []byte, 1)
@@ -24,32 +41,50 @@ func main() {
 			go func(term []byte) {
 				os.Stdout.Write(term)
 
-				// TODO filter here
+				lines := nl_re.Split(string(term), -1)
+				n := len(lines)
 
-				n := len(nl_regex.FindAll(term, -1))
+				// filter it here
+				if filter_re != nil {
+					n = 0
+					for _, line := range lines {
+						if filter_re.MatchString(line) {
+							n++
+						}
+					}
+				}
+
 				atomic.AddUint64(&counter, uint64(n))
 			}(<-in_chan)
 		}
 	}()
 
+	limit := opt.limit
+	iteration := 1
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	// time manager
 	ticker := make(chan struct{}, 1)
 	go func() {
 		for {
-			sec := 60 // TODO
+			sec := opt.delta
 			time.Sleep(time.Duration(sec) * time.Second)
 
 			ticker <- struct{}{} // Pause to read from STDIN
 
-			fmt.Printf("%f rows/sec\n", float64(counter)/float64(sec)) // TODO
+			fmt.Printf("%f lines/sec\n", float64(counter)/float64(sec)) // TODO where should it spew to?
 
 			counter = 0
 			ticker <- struct{}{} // Resume to read from STDIN
+
+			iteration++
+			if limit > 0 && iteration > limit {
+				wg.Done()
+			}
 		}
 	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
@@ -63,8 +98,8 @@ func main() {
 			}
 		}()
 
-		// STDIN reader
-		buf := make([]byte, 4096)
+		// Read from STDIN
+		buf := make([]byte, 1000000)
 		for {
 			if should_wait == true {
 				continue
