@@ -52,11 +52,11 @@ func run(o *opt) {
 	}
 
 	var f *os.File
-	if output_path := o.out; len(output_path) > 0 {
+	if outputPath := o.out; len(outputPath) > 0 {
 		var err error
 
 		// open a file which is specified by option with append mode
-		f, err = os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+		f, err = os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)
@@ -67,16 +67,16 @@ func run(o *opt) {
 		f = os.Stdout
 	}
 
-	var filter_re *regexp.Regexp
-	filter_re = nil
+	var filterRe *regexp.Regexp
+	filterRe = nil
 	if pattern := o.pattern; len(pattern) > 0 {
-		filter_re, _ = regexp.Compile(pattern)
+		filterRe, _ = regexp.Compile(pattern)
 	}
 
-	nl_re, _ := regexp.Compile("\r?\n") // line splitter
+	nlRe, _ := regexp.Compile("\r?\n") // line splitter
 
-	var counter uint64 = 0
-	in_chan := make(chan []byte, 1)
+	var counter uint64
+	inChan := make(chan []byte, 1)
 
 	// counter
 	go func() {
@@ -84,21 +84,21 @@ func run(o *opt) {
 			go func(term []byte) {
 				os.Stdout.Write(term)
 
-				lines := nl_re.Split(string(term), -1)
+				lines := nlRe.Split(string(term), -1)
 				n := len(lines)
 
 				// Apply filtering here
-				if filter_re != nil {
+				if filterRe != nil {
 					n = 0
 					for _, line := range lines {
-						if filter_re.MatchString(line) {
+						if filterRe.MatchString(line) {
 							n++
 						}
 					}
 				}
 
 				atomic.AddUint64(&counter, uint64(n))
-			}(<-in_chan)
+			}(<-inChan)
 		}
 	}()
 
@@ -140,11 +140,11 @@ func run(o *opt) {
 	go func() {
 		defer wg.Done()
 
-		should_wait := false
+		shouldWait := false
 		go func() {
 			for {
 				go func(tick struct{}) {
-					should_wait = !should_wait
+					shouldWait = !shouldWait
 				}(<-ticker)
 			}
 		}()
@@ -152,7 +152,7 @@ func run(o *opt) {
 		// Read from STDIN
 		buf := make([]byte, 1000000)
 		for {
-			if should_wait == true {
+			if shouldWait == true {
 				// Block to read from STDIN while outputting throughput result
 				continue
 			}
@@ -167,7 +167,7 @@ func run(o *opt) {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			in_chan <- buf[:n]
+			inChan <- buf[:n]
 		}
 	}()
 
