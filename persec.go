@@ -14,18 +14,35 @@ type opt struct {
 	pattern string
 	limit   int
 	out     string
+	help    bool
 }
 
 func main() {
-	opt := new(opt)
+	flag.Usage = func() {
+		fmt.Printf(`Usage:
+  some_command | persec [Options]
 
-	flag.IntVar(&opt.delta, "delta", 60, "Span as seconds to measure the throughput")
-	flag.StringVar(&opt.pattern, "pattern", "", "A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
-	flag.IntVar(&opt.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
-	flag.StringVar(&opt.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
+Options:
+`)
+		flag.PrintDefaults()
+	}
+
+	o := new(opt)
+	flag.IntVar(&o.delta, "delta", 60, "Span as seconds to measure the throughput")
+	flag.StringVar(&o.pattern, "pattern", "", "A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
+	flag.IntVar(&o.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
+	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
+	flag.BoolVar(&o.help, "help", false, "Show helps")
+
+	flag.Parse()
+
+	if o.help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	var f *os.File
-	if output_path := opt.out; len(output_path) > 0 {
+	if output_path := o.out; len(output_path) > 0 {
 		f, err := os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			fmt.Errorf("%s", err)
@@ -36,11 +53,9 @@ func main() {
 		f = os.Stdout
 	}
 
-	flag.Parse()
-
 	var filter_re *regexp.Regexp
 	filter_re = nil
-	if pattern := opt.pattern; len(pattern) > 0 {
+	if pattern := o.pattern; len(pattern) > 0 {
 		filter_re, _ = regexp.Compile(pattern)
 	}
 
@@ -73,7 +88,7 @@ func main() {
 		}
 	}()
 
-	limit := opt.limit
+	limit := o.limit
 	iteration := 1
 
 	var wg sync.WaitGroup
@@ -83,7 +98,7 @@ func main() {
 	ticker := make(chan struct{}, 1)
 	go func() {
 		for {
-			sec := opt.delta
+			sec := o.delta
 			time.Sleep(time.Duration(sec) * time.Second)
 
 			ticker <- struct{}{} // Pause to read from STDIN
