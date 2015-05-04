@@ -96,9 +96,9 @@ Options:
 
 	// time manager
 	ticker := make(chan struct{}, 1)
+	sec := o.delta
 	go func() {
 		for {
-			sec := o.delta
 			time.Sleep(time.Duration(sec) * time.Second)
 
 			ticker <- struct{}{} // Pause to read from STDIN
@@ -138,6 +138,8 @@ Options:
 			n, err := os.Stdin.Read(buf)
 			if err != nil {
 				if err == io.EOF {
+					throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(sec)) // XXX inaccuracy
+					f.WriteString(throughput)
 					break
 				}
 				fmt.Errorf("%s", err)
