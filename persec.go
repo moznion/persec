@@ -117,6 +117,8 @@ Options:
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		should_wait := false
 		go func() {
 			for {
