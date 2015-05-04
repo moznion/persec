@@ -1,5 +1,6 @@
 package main
 
+import "log"
 import "os"
 import "io"
 import "sync"
@@ -52,10 +53,12 @@ func run(o *opt) {
 
 	var f *os.File
 	if output_path := o.out; len(output_path) > 0 {
+		var err error
+
 		// open a file which is specified by option with append mode
-		f, err := os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err = os.OpenFile(output_path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {
-			fmt.Errorf("%s", err)
+			log.Fatal(err)
 			os.Exit(1)
 		}
 		defer f.Close()
@@ -115,7 +118,11 @@ func run(o *opt) {
 			ticker <- struct{}{} // Pause to read from STDIN
 
 			throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(sec))
-			f.WriteString(throughput)
+			_, err := f.WriteString(throughput)
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
 
 			counter = 0
 			ticker <- struct{}{} // Resume to read from STDIN
@@ -157,7 +164,7 @@ func run(o *opt) {
 					f.WriteString(throughput)
 					break
 				}
-				fmt.Errorf("%s", err)
+				log.Fatal(err)
 				os.Exit(1)
 			}
 			in_chan <- buf[:n]
