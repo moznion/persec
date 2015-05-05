@@ -1,7 +1,7 @@
 persec
 ==
 
-A command to measure the throughput of per-sec which is on the basis of input from STDIN.
+A command to measure the throughput of per-sec which is on the basis of number of lines from STDIN.
 
 ![persec_demo](https://dl.dropboxusercontent.com/u/14832699/persec.gif)
 
@@ -15,7 +15,7 @@ $ some_command | persec [Options]
 Description
 --
 
-This tool measures the throughput of per-sec which is on the basis of input from STDIN (e.g. piping with `tail -f something`).
+This tool measures the throughput of per-sec which is on the basis of number of lines from STDIN (e.g. piping with `tail -f something`).
 Measuring mechanism is really simple;
 
 1. Count the number of lines while fixed interval (default 60sec).
@@ -33,7 +33,6 @@ Options
 -  --notee=false: Don't tee if this option is true
 -  --out="": Output destination of throughput. If this option is unspecified, results will be written into STDOUT.
 -  --pattern="": A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.
-
 
 Author
 --
