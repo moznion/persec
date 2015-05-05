@@ -35,7 +35,7 @@ Options:
 	}
 
 	o := new(opt)
-	flag.IntVar(&o.delta, "delta", 60, "Span as seconds to measure the throughput")
+	flag.IntVar(&o.delta, "delta", 60, "Interval as seconds to measure the throughput")
 	flag.StringVar(&o.pattern, "pattern", "", "A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
 	flag.IntVar(&o.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
