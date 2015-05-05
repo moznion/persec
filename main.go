@@ -16,6 +16,7 @@ type opt struct {
 	limit   int
 	out     string
 	help    bool
+	notee   bool
 }
 
 func main() {
@@ -38,6 +39,7 @@ Options:
 	flag.StringVar(&o.pattern, "pattern", "", "A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.")
 	flag.IntVar(&o.limit, "limit", 0, "It measures the throughput until number which is specified by this option. If this option is zero or negative, it measures unlimited.")
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
+	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
 
 	flag.Parse()
@@ -79,13 +81,16 @@ func run(o *opt) {
 	inChan := make(chan []byte, 1)
 
 	// counter
+	tee := !o.notee
 	go func() {
 		for {
 			go func(term []byte) {
-				os.Stdout.Write(term)
+				if tee {
+					os.Stdout.Write(term)
+				}
 
 				lines := nlRe.Split(string(term), -1)
-				n := len(lines)
+				n := len(lines) - 1 // `- 1`: to ignore last empty line
 
 				// Apply filtering here
 				if filterRe != nil {
@@ -110,14 +115,14 @@ func run(o *opt) {
 
 	// time manager
 	ticker := make(chan struct{}, 1)
-	sec := o.delta
+	delta := o.delta
 	go func() {
 		for {
-			time.Sleep(time.Duration(sec) * time.Second)
+			time.Sleep(time.Duration(delta) * time.Second)
 
 			ticker <- struct{}{} // Pause to read from STDIN
 
-			throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(sec))
+			throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(delta))
 			_, err := f.WriteString(throughput)
 			if err != nil {
 				log.Fatal(err)
@@ -136,18 +141,18 @@ func run(o *opt) {
 		}
 	}()
 
+	shouldWait := false
+	go func() {
+		for {
+			go func(tick struct{}) {
+				shouldWait = !shouldWait
+			}(<-ticker)
+		}
+	}()
+
 	// Read from STDIN and fire event for counter
 	go func() {
 		defer wg.Done()
-
-		shouldWait := false
-		go func() {
-			for {
-				go func(tick struct{}) {
-					shouldWait = !shouldWait
-				}(<-ticker)
-			}
-		}()
 
 		// Read from STDIN
 		buf := make([]byte, 1000000)
@@ -160,7 +165,7 @@ func run(o *opt) {
 			n, err := os.Stdin.Read(buf)
 			if err != nil {
 				if err == io.EOF {
-					throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(sec)) // XXX inaccuracy
+					throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(delta)) // XXX inaccuracy
 					f.WriteString(throughput)
 					break
 				}
