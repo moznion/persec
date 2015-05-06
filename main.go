@@ -126,6 +126,7 @@ func run(o *opt) {
 			_, err := f.WriteString(throughput)
 			if err != nil {
 				log.Fatal(err)
+				f.Close()
 				os.Exit(1)
 			}
 
@@ -170,6 +171,7 @@ func run(o *opt) {
 					break
 				}
 				log.Fatal(err)
+				f.Close()
 				os.Exit(1)
 			}
 			inChan <- buf[:n]
