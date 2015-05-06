@@ -1,4 +1,4 @@
-persec
+persec [![Build Status](https://travis-ci.org/moznion/persec.svg?branch=master)](https://travis-ci.org/moznion/persec)
 ==
 
 A command to measure the throughput of per-sec which is on the basis of number of lines from STDIN.
