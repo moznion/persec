@@ -1,4 +1,4 @@
-persec [![Build Status](https://travis-ci.org/moznion/persec.svg?branch=master)](https://travis-ci.org/moznion/persec)
+persec [![Build Status](https://travis-ci.org/moznion/persec.svg?branch=master)](https://travis-ci.org/moznion/persec) [![wercker status](https://app.wercker.com/status/58831f8aea401a8e2209351e359988f8/s/master "wercker status")](https://app.wercker.com/project/bykey/58831f8aea401a8e2209351e359988f8)
 ==
 
 A command to measure the throughput of per-sec which is on the basis of number of lines from STDIN.
