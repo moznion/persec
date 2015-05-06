@@ -27,3 +27,5 @@ _testmain.go
 *.prof
 
 persec
+
+log_for_test
