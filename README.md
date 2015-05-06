@@ -34,6 +34,20 @@ Options
 -  --out="": Output destination of throughput. If this option is unspecified, results will be written into STDOUT.
 -  --pattern="": A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.
 
+How to install
+--
+
+### By `go get`
+
+```
+$ go get github.com/moznion/persec
+```
+
+### From GitHub Releases
+
+Access to [https://github.com/moznion/persec/releases](https://github.com/moznion/persec/releases)
+and get an archive which is suitable your architecture.
+
 Author
 --
 
