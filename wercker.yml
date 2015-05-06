@@ -34,19 +34,19 @@ deploy:
         tag: $RELEASE_TAG
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_linux_386.tar.gz
+        file: snapshot/persec_linux_386.tar.gz
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_linux_amd64.tar.gz
+        file: snapshot/persec_linux_amd64.tar.gz
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_darwin_386.zip
+        file: snapshot/persec_darwin_386.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_darwin_amd64.zip
+        file: snapshot/persec_darwin_amd64.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_windows_386.zip
+        file: snapshot/persec_windows_386.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/naisho_windows_amd64.zip
+        file: snapshot/persec_windows_amd64.zip
