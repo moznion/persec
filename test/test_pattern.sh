@@ -15,14 +15,14 @@ sleep 5s
 
 kill $(jobs -p)
 
-throughput_row_num=`grep 0.000000\ lines/sec test.tmp | wc -l | awk '{print $1}'`
+throughput_row_num=`grep 0.00\ lines/sec test.tmp | wc -l | awk '{print $1}'`
 if [ $throughput_row_num -lt 4 ] ; then
   echo "Number of throughput row is not matched to expected"
   echo_red "FAIL: ${0##*/}"
   exit 1
 fi
 
-throughput_row_num=`grep 1.000000\ lines/sec test.tmp | wc -l | awk '{print $1}'`
+throughput_row_num=`grep 1.00\ lines/sec test.tmp | wc -l | awk '{print $1}'`
 if [ $throughput_row_num -ne 1 ] ; then
   echo "Number of throughput row is not matched to expected"
   echo_red "FAIL: ${0##*/}"
