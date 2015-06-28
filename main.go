@@ -14,14 +14,15 @@ import "time"
 import "github.com/mgutz/ansi"
 
 type opt struct {
-	delta   int
-	pattern string
-	limit   int
-	out     string
-	help    bool
-	notee   bool
-	chart   int
-	color   string
+	delta     int
+	pattern   string
+	limit     int
+	out       string
+	help      bool
+	notee     bool
+	chart     int
+	color     string
+	timestamp bool
 }
 
 func main() {
@@ -48,6 +49,7 @@ Options:
 	flag.BoolVar(&o.help, "help", false, "Show helps")
 	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart.")
 	flag.StringVar(&o.color, "color", "reset", "Colorize output. You can use colors which are supported by github.com/mgutz/ansi")
+	flag.BoolVar(&o.timestamp, "timestamp", false, "Prepend timestamp")
 
 	flag.Parse()
 
@@ -132,6 +134,11 @@ func run(o *opt) {
 			throughput := float64(counter) / float64(delta)
 			var result string
 
+			timestamp := ""
+			if o.timestamp {
+				timestamp = "[" + time.Now().Format(time.RFC3339) + "] "
+			}
+
 			if o.chart > 0 {
 				percentage := throughput / float64(o.chart) * 100
 				meter := int64(percentage) / 5
@@ -145,11 +152,11 @@ func run(o *opt) {
 					over = "="
 				}
 
-				result = fmt.Sprintf("%6.2f%% [%s%s]%s %.2f lines/sec\n",
-					percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
+				result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
+					timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 					ansi.Color(over, "red"), throughput)
 			} else {
-				result = ansi.Color(fmt.Sprintf("%.2f lines/sec\n", throughput), o.color)
+				result = ansi.Color(fmt.Sprintf("%s%.2f lines/sec\n", timestamp, throughput), o.color)
 			}
 
 			_, err := f.WriteString(result)
@@ -198,6 +205,11 @@ func run(o *opt) {
 					throughput := float64(counter) / float64(delta)
 					var result string
 
+					timestamp := ""
+					if o.timestamp {
+						timestamp = "[" + time.Now().Format(time.RFC3339) + "] "
+					}
+
 					// XXX inaccuracy
 					if o.chart > 0 {
 						percentage := throughput / float64(o.chart) * 100
@@ -212,11 +224,11 @@ func run(o *opt) {
 							over = "="
 						}
 
-						result = fmt.Sprintf("%6.2f%% [%s%s]%s %.2f lines/sec\n",
-							percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
+						result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
+							timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 							ansi.Color(over, "red"), throughput)
 					} else {
-						result = ansi.Color(fmt.Sprintf("%.2f lines/sec\n", throughput), o.color)
+						result = ansi.Color(fmt.Sprintf("%s%.2f lines/sec\n", timestamp, throughput), o.color)
 					}
 
 					f.WriteString(result)
