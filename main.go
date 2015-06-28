@@ -47,7 +47,7 @@ Options:
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
 	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
-	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart.")
+	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart (Default value of 0 means disable the chart mode).")
 	flag.StringVar(&o.color, "color", "reset", "Colorize output. You can use colors which are supported by github.com/mgutz/ansi")
 	flag.BoolVar(&o.timestamp, "timestamp", false, "Prepend timestamp")
 

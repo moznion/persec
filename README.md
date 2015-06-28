@@ -8,8 +8,16 @@ A command to measure the throughput of per-sec which is on the basis of number o
 Usage
 --
 
+### Basic
+
 ```sh
 $ some_command | persec [Options]
+```
+
+### Bar chart mode
+
+```sh
+$ some_command | persec --chart 100 [Other Options]
 ```
 
 Description
@@ -33,6 +41,9 @@ Options
 -  --notee=false: Don't tee if this option is true
 -  --out="": Output destination of throughput. If this option is unspecified, results will be written into STDOUT.
 -  --pattern="": A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.
+-  --timestamp=false: Prepend timestamp
+-  --chart=0: Show throughput as a bar chart. This option receives int value as a maximum value of a chart (Default value of 0 means disable the chart mode).
+- --color="reset": Colorize output. You can use colors which are supported by github.com/mgutz/ansi
 
 How to install
 --
