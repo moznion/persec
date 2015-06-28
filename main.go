@@ -21,6 +21,7 @@ type opt struct {
 	help    bool
 	notee   bool
 	chart   int
+	color   string
 }
 
 func main() {
@@ -46,6 +47,7 @@ Options:
 	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
 	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart.")
+	flag.StringVar(&o.color, "color", "reset", "Colorize output. You can use colors which are supported by github.com/mgutz/ansi")
 
 	flag.Parse()
 
@@ -147,7 +149,7 @@ func run(o *opt) {
 					percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 					ansi.Color(over, "red"), throughput)
 			} else {
-				result = fmt.Sprintf("%.2f lines/sec\n", throughput)
+				result = ansi.Color(fmt.Sprintf("%.2f lines/sec\n", throughput), o.color)
 			}
 
 			_, err := f.WriteString(result)
@@ -214,7 +216,7 @@ func run(o *opt) {
 							percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 							ansi.Color(over, "red"), throughput)
 					} else {
-						result = fmt.Sprintf("%.2f lines/sec\n", throughput)
+						result = ansi.Color(fmt.Sprintf("%.2f lines/sec\n", throughput), o.color)
 					}
 
 					f.WriteString(result)
