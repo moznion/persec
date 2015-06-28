@@ -3,12 +3,15 @@ package main
 import "log"
 import "os"
 import "io"
+import "strings"
 import "sync"
 import "sync/atomic"
 import "regexp"
 import "fmt"
 import "flag"
 import "time"
+
+import "github.com/mgutz/ansi"
 
 type opt struct {
 	delta   int
@@ -17,6 +20,7 @@ type opt struct {
 	out     string
 	help    bool
 	notee   bool
+	chart   int
 }
 
 func main() {
@@ -41,6 +45,7 @@ Options:
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
 	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
+	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart.")
 
 	flag.Parse()
 
@@ -122,8 +127,30 @@ func run(o *opt) {
 
 			ticker <- struct{}{} // Pause to read from STDIN
 
-			throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(delta))
-			_, err := f.WriteString(throughput)
+			throughput := float64(counter) / float64(delta)
+			var result string
+
+			if o.chart > 0 {
+				percentage := throughput / float64(o.chart) * 100
+				meter := int64(percentage) / 5
+				over := " "
+
+				if int(percentage)%5*2 >= 5 { // round off
+					meter++
+				}
+				if meter >= 20 { // cut off
+					meter = 20
+					over = "="
+				}
+
+				result = fmt.Sprintf("%6.2f%% [%s%s]%s %.2f lines/sec\n",
+					percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
+					ansi.Color(over, "red"), throughput)
+			} else {
+				result = fmt.Sprintf("%.2f lines/sec\n", throughput)
+			}
+
+			_, err := f.WriteString(result)
 			if err != nil {
 				log.Fatal(err)
 				f.Close()
@@ -166,8 +193,31 @@ func run(o *opt) {
 			n, err := os.Stdin.Read(buf)
 			if err != nil {
 				if err == io.EOF {
-					throughput := fmt.Sprintf("%f lines/sec\n", float64(counter)/float64(delta)) // XXX inaccuracy
-					f.WriteString(throughput)
+					throughput := float64(counter) / float64(delta)
+					var result string
+
+					// XXX inaccuracy
+					if o.chart > 0 {
+						percentage := throughput / float64(o.chart) * 100
+						meter := int64(percentage) / 5
+						over := " "
+
+						if int(percentage)%5*2 >= 5 { // round off
+							meter++
+						}
+						if meter >= 20 { // cut off
+							meter = 20
+							over = "="
+						}
+
+						result = fmt.Sprintf("%6.2f%% [%s%s]%s %.2f lines/sec\n",
+							percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
+							ansi.Color(over, "red"), throughput)
+					} else {
+						result = fmt.Sprintf("%.2f lines/sec\n", throughput)
+					}
+
+					f.WriteString(result)
 					break
 				}
 				log.Fatal(err)
