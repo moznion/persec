@@ -161,7 +161,7 @@ func run(o *opt) {
 					if int(percentage)%5*2 >= 5 { // round off
 						meter++
 					}
-					if meter >= 20 { // cut off
+					if meter > 20 { // cut off
 						meter = 20
 						over = "="
 					}
@@ -234,7 +234,7 @@ func run(o *opt) {
 						if int(percentage)%5*2 >= 5 { // round off
 							meter++
 						}
-						if meter >= 20 { // cut off
+						if meter > 20 { // cut off
 							meter = 20
 							over = "="
 						}
