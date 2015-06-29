@@ -42,7 +42,7 @@ Options
 -  --out="": Output destination of throughput. If this option is unspecified, results will be written into STDOUT.
 -  --pattern="": A regexp pattern to filter the line. Filtering means this command measures throughput by matched lines only. If this option is unspecified, it doesn't filter.
 -  --timestamp=false: Prepend timestamp
--  --chart=0: Show throughput as a bar chart. This option receives int value as a maximum value of a chart (Default value of 0 means disable the chart mode).
+-  --chart=0: Show throughput as a bar chart. This option receives int value as a maximum value of a chart. Default value of -1 means disable the chart mode. If 0 value is set, it will sample 5 time to determine the value of 100%.
 - --color="reset": Colorize output. You can use colors which are supported by github.com/mgutz/ansi
 
 How to install

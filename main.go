@@ -20,7 +20,7 @@ type opt struct {
 	out       string
 	help      bool
 	notee     bool
-	chart     int
+	chart     int64
 	color     string
 	timestamp bool
 }
@@ -47,7 +47,7 @@ Options:
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
 	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
-	flag.IntVar(&o.chart, "chart", 0, "Show throughput as a bar chart. This option receives int value as a maximum value of a chart (Default value of 0 means disable the chart mode).")
+	flag.Int64Var(&o.chart, "chart", int64(-1), "Show throughput as a bar chart. This option receives int value as a maximum value of a chart. Default value of -1 means disable the chart mode. If 0 value is set, it will sample 5 time to determine the value of 100%.")
 	flag.StringVar(&o.color, "color", "reset", "Colorize output. You can use colors which are supported by github.com/mgutz/ansi")
 	flag.BoolVar(&o.timestamp, "timestamp", false, "Prepend timestamp")
 
@@ -126,6 +126,9 @@ func run(o *opt) {
 	ticker := make(chan struct{}, 1)
 	delta := o.delta
 	go func() {
+		sampledNum := 0
+		sampled := make([]uint64, 5)
+
 		for {
 			time.Sleep(time.Duration(delta) * time.Second)
 
@@ -139,22 +142,34 @@ func run(o *opt) {
 				timestamp = "[" + time.Now().Format(time.RFC3339) + "] "
 			}
 
-			if o.chart > 0 {
-				percentage := throughput / float64(o.chart) * 100
-				meter := int64(percentage) / 5
-				over := " "
-
-				if int(percentage)%5*2 >= 5 { // round off
-					meter++
-				}
-				if meter >= 20 { // cut off
-					meter = 20
-					over = "="
+			if o.chart > -1 {
+				if o.chart == 0 {
+					if sampledNum > 4 {
+						o.chart = int64(findMax(sampled))
+					} else {
+						sampled[sampledNum] = counter
+						sampledNum++
+					}
+					result = fmt.Sprintf("%s    - %% [ <==>               ]  %.2f lines/sec\n", timestamp, throughput)
 				}
 
-				result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
-					timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
-					ansi.Color(over, "red"), throughput)
+				if o.chart > 0 {
+					percentage := throughput / float64(o.chart) * 100
+					meter := int64(percentage) / 5
+					over := " "
+
+					if int(percentage)%5*2 >= 5 { // round off
+						meter++
+					}
+					if meter >= 20 { // cut off
+						meter = 20
+						over = "="
+					}
+
+					result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
+						timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
+						ansi.Color(over, "red"), throughput)
+				}
 			} else {
 				result = ansi.Color(fmt.Sprintf("%s%.2f lines/sec\n", timestamp, throughput), o.color)
 			}
@@ -243,4 +258,15 @@ func run(o *opt) {
 	}()
 
 	wg.Wait()
+}
+
+func findMax(arr []uint64) uint64 {
+	var max uint64 = 0
+	for _, value := range arr {
+		if value > max {
+			max = value
+		}
+	}
+
+	return max
 }
