@@ -150,7 +150,7 @@ func run(o *opt) {
 						sampled[sampledNum] = counter
 						sampledNum++
 					}
-					result = fmt.Sprintf("%s    - %% [ <==>               ]  %.2f lines/sec\n", timestamp, throughput)
+					result = fmt.Sprintf("%s    - %% <==>               |  %.2f lines/sec\n", timestamp, throughput)
 				}
 
 				if o.chart > 0 {
@@ -166,7 +166,7 @@ func run(o *opt) {
 						over = "="
 					}
 
-					result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
+					result = fmt.Sprintf("%s%6.2f%% %s%s|%s %.2f lines/sec\n",
 						timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 						ansi.Color(over, "red"), throughput)
 				}
@@ -239,7 +239,7 @@ func run(o *opt) {
 							over = "="
 						}
 
-						result = fmt.Sprintf("%s%6.2f%% [%s%s]%s %.2f lines/sec\n",
+						result = fmt.Sprintf("%s%6.2f%% %s%s|%s %.2f lines/sec\n",
 							timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 							ansi.Color(over, "red"), throughput)
 					} else {
