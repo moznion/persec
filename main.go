@@ -20,7 +20,7 @@ type opt struct {
 	out       string
 	help      bool
 	notee     bool
-	chart     int64
+	chart     float64
 	color     string
 	timestamp bool
 }
@@ -47,7 +47,7 @@ Options:
 	flag.StringVar(&o.out, "out", "", "Output destination of throughput. If this option is unspecified, results will be written into STDOUT.")
 	flag.BoolVar(&o.notee, "notee", false, "Don't tee if this option is true")
 	flag.BoolVar(&o.help, "help", false, "Show helps")
-	flag.Int64Var(&o.chart, "chart", int64(-1), "Show throughput as a bar chart. This option receives int value as a maximum value of a chart. Default value of -1 means disable the chart mode. If 0 value is set, it will sample 5 time to determine the value of 100%.")
+	flag.Float64Var(&o.chart, "chart", -1.0, "Show throughput as a bar chart. This option receives a float value as expected maximum throughput of chart. Default value is -1.0; if this value is set negative value then disable chart mode. If 0 value is set, it will sample 5 time to determine the throughput of 100%.")
 	flag.StringVar(&o.color, "color", "reset", "Colorize output. You can use colors which are supported by github.com/mgutz/ansi")
 	flag.BoolVar(&o.timestamp, "timestamp", false, "Prepend timestamp")
 
@@ -127,7 +127,7 @@ func run(o *opt) {
 	delta := o.delta
 	go func() {
 		sampledNum := 0
-		sampled := make([]uint64, 5)
+		sampled := make([]float64, 5)
 
 		for {
 			time.Sleep(time.Duration(delta) * time.Second)
@@ -145,12 +145,12 @@ func run(o *opt) {
 			if o.chart > -1 {
 				if o.chart == 0 {
 					if sampledNum > 4 {
-						o.chart = int64(findMax(sampled))
+						o.chart = findMax(sampled)
 					} else {
-						sampled[sampledNum] = counter
+						sampled[sampledNum] = throughput
 						sampledNum++
 					}
-					result = fmt.Sprintf("%s    - %% <==>               |  %.2f lines/sec\n", timestamp, throughput)
+					result = fmt.Sprintf("%s    - %% | <==>               |   %.2f lines/sec\n", timestamp, throughput)
 				}
 
 				if o.chart > 0 {
@@ -166,7 +166,7 @@ func run(o *opt) {
 						over = "="
 					}
 
-					result = fmt.Sprintf("%s%6.2f%% %s%s|%s %.2f lines/sec\n",
+					result = fmt.Sprintf("%s%6.2f%% |%s%s|%s  %.2f lines/sec\n",
 						timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 						ansi.Color(over, "red"), throughput)
 				}
@@ -239,7 +239,7 @@ func run(o *opt) {
 							over = "="
 						}
 
-						result = fmt.Sprintf("%s%6.2f%% %s%s|%s %.2f lines/sec\n",
+						result = fmt.Sprintf("%s%6.2f%% |%s%s|%s  %.2f lines/sec\n",
 							timestamp, percentage, strings.Repeat("=", int(meter)), strings.Repeat(" ", 20-int(meter)),
 							ansi.Color(over, "red"), throughput)
 					} else {
@@ -260,8 +260,8 @@ func run(o *opt) {
 	wg.Wait()
 }
 
-func findMax(arr []uint64) uint64 {
-	var max uint64 = 0
+func findMax(arr []float64) float64 {
+	var max float64 = 0.0
 	for _, value := range arr {
 		if value > max {
 			max = value
